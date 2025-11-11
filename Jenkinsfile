@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Azure environment variables (use Jenkins credentials, not plaintext!)
-        AZURE_CREDENTIALS = credentials('azure-credentials-id')   // Jenkins → Manage Credentials
+        AZURE_CREDENTIALS = credentials('azure-credentials-id')
         ACR_NAME = "jenkinsacr687827139"
         WEBAPP_NAME = "jenkins-webapp-demo"
         RESOURCE_GROUP = "jenkins-rg"
@@ -30,9 +29,8 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image...'
-                    sh """
-                        docker build -t ${ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER} .
-                    """
+                    def imageTag = "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker build -t ${imageTag} ."
                 }
             }
         }
@@ -42,7 +40,11 @@ pipeline {
                 script {
                     echo 'Logging into Azure Container Registry...'
                     sh """
-                        az login --service-principal -u ${AZURE_CREDENTIALS_USR} -p ${AZURE_CREDENTIALS_PSW} --tenant 5beb351c-3fb8-418f-b612-fe36ace96ef3
+                        az login --service-principal \
+                            -u ${AZURE_CREDENTIALS_USR} \
+                            -p ${AZURE_CREDENTIALS_PSW} \
+                            --tenant 5beb351c-3fb8-418f-b612-fe36ace96ef3
+
                         az acr login --name ${ACR_NAME}
                     """
                 }
@@ -53,9 +55,8 @@ pipeline {
             steps {
                 script {
                     echo 'Pushing image to ACR...'
-                    sh """
-                        docker push ${ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER}
-                    """
+                    def imageTag = "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${imageTag}"
                 }
             }
         }
@@ -64,12 +65,14 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Azure Web App...'
+                    def imageTag = "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    def registryUrl = "https://${ACR_NAME}.azurecr.io"
                     sh """
                         az webapp config container set \
                             --name ${WEBAPP_NAME} \
                             --resource-group ${RESOURCE_GROUP} \
-                            --docker-custom-image-name ${ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER} \
-                            --docker-registry-server-url ${'https://' + ACR_NAME + '.azurecr.io'}
+                            --docker-custom-image-name ${imageTag} \
+                            --docker-registry-server-url ${registryUrl}
                     """
                 }
             }
