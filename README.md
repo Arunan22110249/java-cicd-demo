@@ -1,4 +1,5 @@
 # Java CI/CD Demo — Campus Food Demand Predictor
+this project is being done by Arunan J 
 
 This is a minimal, runnable Java Spring Boot project demonstrating an end-to-end CI/CD-ready repository:
 - Maven build
