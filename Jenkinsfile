@@ -29,7 +29,9 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image...'
-                    def imageTag = ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER
+                    // Build ACR URL in plain Groovy (no interpolation)
+                    def registryHost = ACR_NAME + '.azurecr.io'
+                    def imageTag = registryHost + '/' + IMAGE_NAME + ':' + BUILD_NUMBER
                     sh "docker build -t ${imageTag} ."
                 }
             }
@@ -55,7 +57,8 @@ pipeline {
             steps {
                 script {
                     echo 'Pushing image to ACR...'
-                    def imageTag = ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER
+                    def registryHost = ACR_NAME + '.azurecr.io'
+                    def imageTag = registryHost + '/' + IMAGE_NAME + ':' + BUILD_NUMBER
                     sh "docker push ${imageTag}"
                 }
             }
@@ -65,8 +68,9 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Azure Web App...'
-                    def imageTag = ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER
-                    def registryUrl = 'https://' + ACR_NAME + '.azurecr.io'
+                    def registryHost = ACR_NAME + '.azurecr.io'
+                    def imageTag = registryHost + '/' + IMAGE_NAME + ':' + BUILD_NUMBER
+                    def registryUrl = 'https://' + registryHost
                     sh """
                         az webapp config container set \
                             --name ${WEBAPP_NAME} \
