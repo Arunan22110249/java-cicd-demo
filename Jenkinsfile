@@ -31,7 +31,7 @@ pipeline {
                 script {
                     echo 'Building Docker image...'
                     sh """
-                        docker build -t ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${BUILD_NUMBER} .
+                        docker build -t ${ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER} .
                     """
                 }
             }
@@ -54,7 +54,7 @@ pipeline {
                 script {
                     echo 'Pushing image to ACR...'
                     sh """
-                        docker push ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${BUILD_NUMBER}
+                        docker push ${ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER}
                     """
                 }
             }
@@ -68,8 +68,8 @@ pipeline {
                         az webapp config container set \
                             --name ${WEBAPP_NAME} \
                             --resource-group ${RESOURCE_GROUP} \
-                            --docker-custom-image-name ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${BUILD_NUMBER} \
-                            --docker-registry-server-url https://${ACR_NAME}.azurecr.io
+                            --docker-custom-image-name ${ACR_NAME + '.azurecr.io/' + IMAGE_NAME + ':' + BUILD_NUMBER} \
+                            --docker-registry-server-url ${'https://' + ACR_NAME + '.azurecr.io'}
                     """
                 }
             }
@@ -78,10 +78,11 @@ pipeline {
 
     post {
         success {
-            echo "Deployment successful! Application running at: https://${WEBAPP_NAME}.azurewebsites.net"
+            echo "✅ Deployment successful!"
+            echo "Application running at: https://${WEBAPP_NAME}.azurewebsites.net"
         }
         failure {
-            echo "Pipeline failed. Check Jenkins console logs for details."
+            echo "❌ Pipeline failed. Check Jenkins console logs for details."
         }
     }
 }
